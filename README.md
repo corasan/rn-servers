@@ -97,7 +97,9 @@ the current API binds only to `127.0.0.1` and is intentionally local.
 
 ## Development
 
-Requires Node.js 20 or newer and has no runtime dependencies.
+Requires Node.js 20 or newer. The terminal interface is rendered with
+[Ink](https://github.com/vadimdemedes/ink), while endpoint and JSON commands
+remain plain text for reliable use in scripts.
 
 ```sh
 npm test

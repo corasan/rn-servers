@@ -5,15 +5,27 @@ import { fileURLToPath } from "node:url";
 import { request } from "./client.js";
 import { CONTROL_PORT, DAEMON_LOG_FILE, DAEMON_PID_FILE, HOME, HOST } from "./constants.js";
 import { ensureDirectory, parseCommandLine, processIsAlive } from "./utils.js";
+import {
+  printDaemon,
+  printHelp,
+  printLogs,
+  printMessage,
+  printProject,
+  printProjects,
+  printTailscale,
+  writeRaw
+} from "./ui.js";
 
 const daemonScript = fileURLToPath(new URL("./daemon.js", import.meta.url));
 
 export async function run(argv) {
+  if (argv[0] === "--help") return printHelp();
+  if (argv[0] === "--version") return writeRaw("rn-server 0.1.0\n");
   const { positional, options } = parseCommandLine(argv);
   const [command = "help", reference, target] = positional;
 
-  if (["help", "--help", "-h"].includes(command)) return printHelp();
-  if (["version", "--version", "-v"].includes(command)) return console.log("rn-server 0.1.0");
+  if (["help", "-h"].includes(command)) return printHelp();
+  if (["version", "-v"].includes(command)) return writeRaw("rn-server 0.1.0\n");
   if (command === "daemon") return daemonCommand(reference || "status");
   await ensureDaemon();
 
@@ -30,30 +42,29 @@ export async function run(argv) {
         tailscale: Boolean(options.tailscale)
       }
     });
-    console.log(`Added ${project.name}`);
-    printProject(project);
+    printProject(project, `Added ${project.name}`);
     return;
   }
   if (command === "list" || command === "status") {
     const projects = await request("/projects");
-    if (!projects.length) return console.log("No projects registered. Run: rn-server add /path/to/app");
-    printTable(projects);
+    if (!projects.length) return printMessage("No projects registered", "Run rn-server add /path/to/app", "yellow");
+    printProjects(projects);
     return;
   }
   if (command === "endpoint" || command === "resolve") {
     const directory = path.resolve(reference || process.cwd());
     const project = await request(`/resolve?directory=${encodeURIComponent(directory)}`);
     if (options.json) {
-      console.log(JSON.stringify({
+      writeRaw(`${JSON.stringify({
         id: project.id,
         name: project.name,
         directory: project.directory,
         endpoint: project.runtime.endpoint,
         port: project.port,
         state: project.runtime.state
-      }));
+      })}\n`);
     } else {
-      console.log(project.runtime.endpoint);
+      writeRaw(`${project.runtime.endpoint}\n`);
     }
     return;
   }
@@ -81,7 +92,7 @@ export async function run(argv) {
   if (command === "remove") {
     if (!reference) throw new Error("Usage: rn-server remove <project>");
     const project = await request(`/projects/${encodeURIComponent(reference)}`, { method: "DELETE" });
-    console.log(`Removed ${project.name}`);
+    printMessage(`Removed ${project.name}`, project.directory);
     return;
   }
   if (command === "logs") {
@@ -91,7 +102,7 @@ export async function run(argv) {
     if (!project) throw new Error(`Unknown project: ${reference}`);
     const lines = Number(options.lines || 80);
     const content = fs.existsSync(project.runtime.logFile) ? fs.readFileSync(project.runtime.logFile, "utf8") : "No logs yet.\n";
-    console.log(content.split("\n").slice(-lines).join("\n"));
+    printLogs(project, content.split("\n").slice(-lines).join("\n"));
     return;
   }
   throw new Error(`Unknown command: ${command}. Run rn-server help.`);
@@ -100,24 +111,24 @@ export async function run(argv) {
 async function daemonCommand(action) {
   if (action === "start") {
     const started = await ensureDaemon();
-    console.log(started ? `Daemon started at http://${HOST}:${CONTROL_PORT}` : "Daemon is already running");
+    printDaemon(true, started ? `Started at http://${HOST}:${CONTROL_PORT}` : `Already running at http://${HOST}:${CONTROL_PORT}`);
     return;
   }
   if (action === "stop") {
     try {
       await request("/shutdown", { method: "POST" });
-      console.log("Daemon stopped");
+      printDaemon(false);
     } catch {
-      console.log("Daemon is not running");
+      printDaemon(false, "Daemon was not running");
     }
     return;
   }
   if (action === "status") {
     try {
       const health = await request("/health");
-      console.log(`Daemon is running (pid ${health.pid}) at http://${HOST}:${CONTROL_PORT}`);
+      printDaemon(true, `pid ${health.pid} · http://${HOST}:${CONTROL_PORT}`);
     } catch {
-      console.log("Daemon is not running");
+      printDaemon(false);
     }
     return;
   }
@@ -148,43 +159,4 @@ async function ensureDaemon() {
     } catch {}
   }
   throw new Error(`Daemon did not start. See ${DAEMON_LOG_FILE}`);
-}
-
-function printProject(project) {
-  console.log(`${project.name}: ${project.runtime.state} · ${project.runtime.endpoint}`);
-  console.log(`  ${project.directory}`);
-}
-
-function printTailscale(project) {
-  const tailscale = project.runtime.tailscale;
-  console.log(`${project.name}: Tailscale ${tailscale.state}`);
-  if (tailscale.endpoint) console.log(`  ${tailscale.endpoint}`);
-  if (tailscale.error) console.log(`  ${tailscale.error}`);
-}
-
-function printTable(projects) {
-  const rows = projects.map((project) => ({
-    NAME: project.name,
-    STATE: project.runtime.state,
-    ENDPOINT: project.runtime.endpoint,
-    DIRECTORY: project.directory
-  }));
-  console.table(rows);
-}
-
-function printHelp() {
-  console.log(`rn-server — persistent React Native development servers
-
-Usage:
-  rn-server add [directory] [--name NAME] [--port PORT] [--command COMMAND] [--no-start] [--tailscale]
-  rn-server list
-  rn-server endpoint [directory] [--json]
-  rn-server start|stop|restart <project>
-  rn-server logs <project> [--lines 80]
-  rn-server remove <project>
-  rn-server tailscale enable|disable|status <project>
-  rn-server daemon start|stop|status
-
-Commands may use a project name or its generated id. Custom commands can contain
-{port}; for example: --command "npm run dev -- --port {port}".`);
 }

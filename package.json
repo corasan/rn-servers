@@ -13,5 +13,9 @@
   "engines": {
     "node": ">=20"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "ink": "^6.8.0",
+    "react": "^19.2.7"
+  }
 }
