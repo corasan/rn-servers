@@ -1,0 +1,17 @@
+{
+  "name": "rn-server",
+  "version": "0.1.0",
+  "description": "Keep React Native development servers running at stable local endpoints.",
+  "type": "module",
+  "bin": {
+    "rn-server": "./bin/rn-server.js"
+  },
+  "scripts": {
+    "test": "node --test",
+    "start": "node ./bin/rn-server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
