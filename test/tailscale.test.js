@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { TailscaleServe } from "../src/tailscale.js";
+import { resolveTailscaleBinary, TailscaleServe } from "../src/tailscale.js";
 
 const project = { id: "example", port: 8081, tailscale: true };
 
@@ -41,4 +41,12 @@ test("Tailscale failures are reported without crashing Metro supervision", () =>
     dnsName: null,
     error: "not connected"
   });
+});
+
+test("Tailscale binary discovery works with a macOS GUI app PATH", () => {
+  const available = new Set(["/Applications/Tailscale.app/Contents/MacOS/Tailscale"]);
+  assert.equal(resolveTailscaleBinary({ exists: (candidate) => available.has(candidate) }),
+    "/Applications/Tailscale.app/Contents/MacOS/Tailscale");
+  assert.equal(resolveTailscaleBinary({ configured: "/custom/tailscale", exists: () => true }),
+    "/custom/tailscale");
 });

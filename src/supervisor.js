@@ -42,7 +42,12 @@ export class Supervisor {
       cwd: project.directory,
       shell: true,
       detached: true,
-      env: { ...process.env, PORT: String(project.port), RN_SERVER_PORT: String(project.port) },
+      env: {
+        ...process.env,
+        PATH: supervisorPath(project),
+        PORT: String(project.port),
+        RN_SERVER_PORT: String(project.port)
+      },
       stdio: ["ignore", output, output]
     });
     fs.closeSync(output);
@@ -99,6 +104,16 @@ export class Supervisor {
   logFile(project) {
     return path.join(this.logsDirectory, `${project.id}.log`);
   }
+}
+
+export function supervisorPath(project, environmentPath = process.env.PATH || "") {
+  return [
+    path.join(project.directory, "node_modules", ".bin"),
+    path.dirname(process.execPath),
+    "/opt/homebrew/bin",
+    "/usr/local/bin",
+    environmentPath
+  ].filter(Boolean).join(path.delimiter);
 }
 
 function waitForExit(child, timeout) {

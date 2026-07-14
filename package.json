@@ -8,7 +8,10 @@
   },
   "scripts": {
     "test": "node --test",
-    "start": "node ./bin/rn-server.js"
+    "start": "node ./bin/rn-server.js",
+    "macos:test": "swift test --package-path apps/macos",
+    "macos:build": "./packaging/macos/build-distribution.sh",
+    "macos:verify": "./packaging/macos/verify-distribution.sh"
   },
   "engines": {
     "node": ">=20"

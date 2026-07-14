@@ -83,13 +83,32 @@ The background daemon also exposes a loopback-only API at
 - `POST /projects/:id/start`, `/stop`, or `/restart`
 - `DELETE /projects/:id`
 
-## macOS and iOS app direction
+## macOS app
 
-The process supervisor deliberately lives outside the GUI. A React Native
-macOS menu-bar app can consume the local API to add project folders, show
-health/logs/endpoints, and start or stop apps without opening Terminal. It can
-also install the daemon as a macOS LaunchAgent so all opted-in projects start at
-login.
+The native SwiftUI companion provides a dashboard and menu-bar controls for
+adding projects, opening or copying endpoints, controlling Metro processes,
+and toggling Tailscale Serve. It embeds the Node runtime and this CLI, so the
+destination Mac does not need Node installed.
+
+The distributable `.pkg` installs both components together:
+
+- `/Applications/RN Server.app`
+- `/usr/local/bin/rn-server`
+
+Build and verify an architecture-specific development package with:
+
+```sh
+npm run macos:build
+npm run macos:verify
+```
+
+See [`apps/macos/README.md`](apps/macos/README.md) for development, signing,
+notarization, and packaging details.
+
+The process supervisor deliberately remains outside the GUI, so Metro servers
+continue running when the app window or menu-bar app closes.
+
+## iOS app direction
 
 An iOS companion can be a remote dashboard, but it cannot directly supervise
 processes on the Mac. Remote control should be a later, authenticated API mode;
@@ -103,6 +122,7 @@ remain plain text for reliable use in scripts.
 
 ```sh
 npm test
+npm run macos:test
 npm link
 rn-server help
 ```

@@ -5,6 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { detectCommand, nextAvailablePort, Registry } from "../src/registry.js";
 import { parseCommandLine, slugify } from "../src/utils.js";
+import { supervisorPath } from "../src/supervisor.js";
 
 function fixture(manifest) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "rn-server-test-"));
@@ -42,4 +43,11 @@ test("CLI parser handles inline and positional options", () => {
     positional: ["add", "."],
     options: { name: "Demo", "no-start": true }
   });
+});
+
+test("supervisor PATH includes project binaries and common macOS package locations", () => {
+  const value = supervisorPath({ directory: "/projects/example" }, "/usr/bin:/bin");
+  assert.ok(value.startsWith(`/projects/example/node_modules/.bin${path.delimiter}`));
+  assert.match(value, /\/opt\/homebrew\/bin/);
+  assert.match(value, /\/usr\/local\/bin/);
 });

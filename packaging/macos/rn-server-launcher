@@ -1,0 +1,12 @@
+#!/bin/sh
+
+APP_BUNDLE="${RN_SERVER_APP_BUNDLE:-/Applications/RN Server.app}"
+NODE="$APP_BUNDLE/Contents/Resources/cli/node"
+CLI="$APP_BUNDLE/Contents/Resources/cli/bin/rn-server.js"
+
+if [ ! -x "$NODE" ] || [ ! -f "$CLI" ]; then
+  echo "rn-server: RN Server.app is missing or incomplete at $APP_BUNDLE" >&2
+  exit 1
+fi
+
+exec "$NODE" "$CLI" "$@"

@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import fs from "node:fs";
 
 export class TailscaleServe {
   constructor({ run = runTailscale } = {}) {
@@ -60,7 +61,7 @@ export class TailscaleServe {
 
 function runTailscale(args) {
   try {
-    return execFileSync("tailscale", args, {
+    return execFileSync(resolveTailscaleBinary(), args, {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
       timeout: 10_000
@@ -70,4 +71,17 @@ function runTailscale(args) {
     const detail = error.stderr?.trim() || error.stdout?.trim() || error.message;
     throw new Error(`Tailscale command failed: ${detail}`);
   }
+}
+
+export function resolveTailscaleBinary({
+  configured = process.env.RN_SERVER_TAILSCALE_BIN,
+  exists = fs.existsSync
+} = {}) {
+  const candidates = [
+    configured,
+    "/usr/local/bin/tailscale",
+    "/opt/homebrew/bin/tailscale",
+    "/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+  ].filter(Boolean);
+  return candidates.find((candidate) => exists(candidate)) || "tailscale";
 }
