@@ -18,6 +18,8 @@ test -n "$PKG"
 
 "$APP/Contents/Resources/cli/node" "$APP/Contents/Resources/cli/bin/rn-server.js" --version
 RN_SERVER_APP_BUNDLE="$APP" "$DIST/pkg-root/usr/local/bin/rn-server" --version
+HELP_OUTPUT="$("$APP/Contents/Resources/cli/node" "$APP/Contents/Resources/cli/bin/rn-server.js" help)"
+grep -q 'rn-server ready' <<< "$HELP_OUTPUT"
 codesign --verify --deep --strict "$APP"
 if ! pkgutil --check-signature "$PKG"; then
   echo "Installer package is unsigned (development build)."

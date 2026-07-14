@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { request } from "./client.js";
 import { CONTROL_PORT, DAEMON_LOG_FILE, DAEMON_PID_FILE, HOME, HOST } from "./constants.js";
 import { ensureDirectory, parseCommandLine, processIsAlive } from "./utils.js";
+import { makeReady } from "./ready.js";
 import {
   printDaemon,
   printHelp,
@@ -12,6 +13,7 @@ import {
   printMessage,
   printProject,
   printProjects,
+  printReady,
   printTailscale,
   writeRaw
 } from "./ui.js";
@@ -68,6 +70,20 @@ export async function run(argv) {
     }
     return;
   }
+  if (command === "ready") {
+    const project = await resolveProject(reference);
+    const result = await makeReady({
+      project,
+      options,
+      start: (selected) => request(`/projects/${encodeURIComponent(selected.id)}/start`, {
+        method: "POST",
+        timeout: 10_000
+      })
+    });
+    if (options.json) writeRaw(`${JSON.stringify(result)}\n`);
+    else printReady(result);
+    return;
+  }
   if (["start", "stop", "restart"].includes(command)) {
     if (!reference) throw new Error(`Usage: rn-server ${command} <project>`);
     const project = await request(`/projects/${encodeURIComponent(reference)}/${command}`, { method: "POST" });
@@ -106,6 +122,16 @@ export async function run(argv) {
     return;
   }
   throw new Error(`Unknown command: ${command}. Run rn-server help.`);
+}
+
+async function resolveProject(reference) {
+  if (reference) {
+    const projects = await request("/projects");
+    const exact = projects.find((project) => project.id === reference || project.name === reference);
+    if (exact) return exact;
+  }
+  const directory = path.resolve(reference || process.cwd());
+  return request(`/resolve?directory=${encodeURIComponent(directory)}`);
 }
 
 async function daemonCommand(action) {

@@ -18,6 +18,7 @@ rn-server list
 # From anywhere inside a registered project (agent-friendly)
 rn-server endpoint
 rn-server endpoint --json
+rn-server ready --platform ios --json
 
 # Process control
 rn-server stop my-app
@@ -60,8 +61,49 @@ rn-server add . --command "npm run start -- --port {port}"
 
 ## Agent contract
 
-Agents should never guess a Metro port. From the project working directory they
-can use:
+Agents should never guess a Metro port or simulator identifier. From the
+project working directory, one idempotent command prepares both:
+
+```sh
+rn-server ready --json
+```
+
+It starts the registered Metro server, waits for the packager to respond,
+selects or boots the configured iOS Simulator or Android emulator, applies
+Android `adb reverse` using the project's assigned port, optionally launches an
+installed app, and prints one machine-readable result:
+
+```json
+{"project":{"id":"my-app","name":"my-app","directory":"/Users/me/Projects/my-app"},"metro":{"state":"ready","endpoint":"http://127.0.0.1:8081","localEndpoint":"http://127.0.0.1:8081","port":8081,"pid":1234},"simulator":{"platform":"ios","id":"AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE","name":"iPhone 17 Pro","state":"booted"},"app":{"id":"com.example.myapp","state":"launched"}}
+```
+
+Check deterministic defaults into the app's `package.json` so every human and
+agent uses the same target:
+
+```json
+{
+  "rnServer": {
+    "platform": "ios",
+    "ios": {
+      "device": "iPhone 17 Pro",
+      "appId": "com.example.myapp"
+    },
+    "android": {
+      "device": "Pixel_9_Pro",
+      "appId": "com.example.myapp"
+    }
+  }
+}
+```
+
+Command-line values override project defaults:
+
+```sh
+rn-server ready --platform android --device Pixel_9_Pro --app-id com.example.myapp --json
+rn-server ready --platform ios --device AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE --no-open --json
+```
+
+To resolve only the stable Metro endpoint without starting a simulator, use:
 
 ```sh
 rn-server endpoint --json
