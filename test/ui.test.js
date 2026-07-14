@@ -4,7 +4,7 @@ import test from "node:test";
 import React from "react";
 import { Box, Text, renderToString } from "ink";
 import { run } from "../src/cli.js";
-import { printProjects } from "../src/ui.js";
+import { printProjects, printReady } from "../src/ui.js";
 
 test("Ink renders terminal layouts without requiring a live TTY", () => {
   const output = stripVTControlCharacters(renderToString(
@@ -55,4 +55,28 @@ test("project cards show both tailnet and local endpoints", () => {
   assert.match(plain, /dev-mac\.example\.ts\.net:8081/);
   assert.match(plain, /127\.0\.0\.1:8081/);
   assert.match(plain, /Tailscale  enabled/);
+});
+
+test("ready output explains when a dedicated simulator was created", () => {
+  let output = "";
+  const originalWrite = process.stdout.write;
+  process.stdout.write = (value) => { output += value; return true; };
+  try {
+    printReady({
+      project: { name: "MyProject" },
+      metro: { endpoint: "http://127.0.0.1:8081" },
+      simulator: {
+        platform: "ios",
+        id: "PROJECT-SIM",
+        name: "MyProject Sim",
+        created: true
+      },
+      app: null
+    });
+  } finally {
+    process.stdout.write = originalWrite;
+  }
+  const plain = stripVTControlCharacters(output);
+  assert.match(plain, /MyProject Sim/);
+  assert.match(plain, /created for this project/);
 });

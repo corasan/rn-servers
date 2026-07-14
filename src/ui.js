@@ -45,6 +45,7 @@ export function printReady(result) {
       h(Text, null, h(Text, { bold: true }, "Metro      "), h(Text, { color: "cyan" }, result.metro.endpoint)),
       h(Text, null, h(Text, { bold: true }, "Simulator  "), `${result.simulator.name} (${result.simulator.platform})`),
       h(Text, { dimColor: true }, `Device ID   ${result.simulator.id}`),
+      h(Text, { dimColor: true }, `Device      ${result.simulator.created ? "created for this project" : "reused"}`),
       result.app ? h(Text, null, h(Text, { bold: true }, "App        "), `${result.app.id} · ${result.app.state}`) : null
     ),
     h(Text, { dimColor: true }, "Tip: add --json for the stable agent contract.")
@@ -80,7 +81,7 @@ export function printHelp() {
       ["add [directory]", "Register and start a project"],
       ["list", "Show registered projects and endpoints"],
       ["endpoint [directory] [--json]", "Resolve the containing project"],
-      ["ready [project] [--platform ios|android] [--json]", "Start Metro and prepare a simulator"],
+      ["ready [project] [--platform ios|android] [--json]", "Start Metro and prepare its dedicated simulator"],
       ["start|stop|restart <project>", "Control a Metro server"],
       ["logs <project> [--lines 80]", "Show recent Metro output"],
       ["remove <project>", "Stop and unregister a project"]

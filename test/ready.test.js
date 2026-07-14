@@ -11,6 +11,7 @@ test("makeReady returns one stable Metro and simulator contract", async () => {
     rnServer: { platform: "ios", ios: { device: "iPhone 17 Pro" } }
   }));
   const project = { id: "example", name: "Example", directory, port: 8081 };
+  let receivedConfiguration;
   const result = await makeReady({
     project,
     options: {},
@@ -20,15 +21,21 @@ test("makeReady returns one stable Metro and simulator contract", async () => {
     }),
     fetchStatus: async () => ({ ok: true, status: 200, text: async () => "packager-status:running" }),
     simulator: {
-      ensure: async (configuration) => ({
-        platform: configuration.platform,
-        id: "SIM-UDID",
-        name: configuration.device,
-        state: "booted",
-        app: null
-      })
+      ensure: async (configuration) => {
+        receivedConfiguration = configuration;
+        return {
+          platform: configuration.platform,
+          id: "SIM-UDID",
+          name: configuration.device,
+          state: "booted",
+          created: false,
+          app: null
+        };
+      }
     }
   });
+
+  assert.equal(receivedConfiguration.projectName, "Example");
 
   assert.deepEqual(result, {
     project: { id: "example", name: "Example", directory },
@@ -39,7 +46,7 @@ test("makeReady returns one stable Metro and simulator contract", async () => {
       port: 8081,
       pid: 123
     },
-    simulator: { platform: "ios", id: "SIM-UDID", name: "iPhone 17 Pro", state: "booted" },
+    simulator: { platform: "ios", id: "SIM-UDID", name: "iPhone 17 Pro", state: "booted", created: false },
     app: null
   });
 });

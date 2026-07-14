@@ -11,6 +11,7 @@ export async function makeReady({ project, options = {}, start, simulator = new 
   const configuration = readyConfiguration(manifest, options);
   const device = await simulator.ensure({
     ...configuration,
+    projectName: started.name,
     port: started.port,
     timeout
   });

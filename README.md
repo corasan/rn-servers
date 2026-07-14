@@ -68,40 +68,64 @@ project working directory, one idempotent command prepares both:
 rn-server ready --json
 ```
 
-It starts the registered Metro server, waits for the packager to respond,
-selects or boots the configured iOS Simulator or Android emulator, applies
-Android `adb reverse` using the project's assigned port, optionally launches an
-installed app, and prints one machine-readable result:
+It starts the registered Metro server, waits for the packager to respond, then
+creates or boots a simulator dedicated to that project. An iOS project named
+`MyProject` gets `MyProject Sim`; Android uses the AVD-safe `MyProject_Sim`.
+Later runs reuse the same device. The command also applies Android `adb reverse`
+using the project's assigned port, optionally launches an installed app, and
+prints one machine-readable result:
 
 ```json
-{"project":{"id":"my-app","name":"my-app","directory":"/Users/me/Projects/my-app"},"metro":{"state":"ready","endpoint":"http://127.0.0.1:8081","localEndpoint":"http://127.0.0.1:8081","port":8081,"pid":1234},"simulator":{"platform":"ios","id":"AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE","name":"iPhone 17 Pro","state":"booted"},"app":{"id":"com.example.myapp","state":"launched"}}
+{"project":{"id":"my-app","name":"my-app","directory":"/Users/me/Projects/my-app"},"metro":{"state":"ready","endpoint":"http://127.0.0.1:8081","localEndpoint":"http://127.0.0.1:8081","port":8081,"pid":1234},"simulator":{"platform":"ios","id":"AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE","name":"my-app Sim","state":"booted","created":true},"app":{"id":"com.example.myapp","state":"launched"}}
 ```
 
-Check deterministic defaults into the app's `package.json` so every human and
-agent uses the same target:
+The project-derived name is the deterministic default, so no device
+configuration is required. Check platform and app IDs into the app's
+`package.json` so every human and agent uses the same target:
 
 ```json
 {
   "rnServer": {
     "platform": "ios",
     "ios": {
-      "device": "iPhone 17 Pro",
       "appId": "com.example.myapp"
     },
     "android": {
-      "device": "Pixel_9_Pro",
       "appId": "com.example.myapp"
     }
   }
 }
 ```
 
-Command-line values override project defaults:
+For a newly created iOS device, `rn-server` uses the newest installed iPhone
+device type and runtime. For Android, it uses the newest installed system image
+that fits the host architecture. Command-line values override those defaults:
 
 ```sh
 rn-server ready --platform android --device Pixel_9_Pro --app-id com.example.myapp --json
 rn-server ready --platform ios --device AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE --no-open --json
 ```
+
+Creation can also be pinned in `package.json` for reproducible environments:
+
+```json
+{
+  "rnServer": {
+    "ios": {
+      "deviceType": "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro",
+      "runtime": "com.apple.CoreSimulator.SimRuntime.iOS-26-0"
+    },
+    "android": {
+      "deviceType": "pixel_9_pro",
+      "systemImage": "system-images;android-36;google_apis;arm64-v8a"
+    }
+  }
+}
+```
+
+Equivalent one-off flags are `--device-type`, `--runtime`, and
+`--system-image`. Android AVD creation requires the Android command-line tools
+and JDK 17 or later.
 
 To resolve only the stable Metro endpoint without starting a simulator, use:
 
