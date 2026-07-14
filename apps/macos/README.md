@@ -6,8 +6,20 @@ daemon used by the terminal CLI.
 
 ## Development workflow
 
-The app is a Swift Package, so it does not require CocoaPods or a second Metro
-server.
+Open the checked-in Xcode project, select the shared `RNServerApp` scheme, and
+press Command-R:
+
+```sh
+npm ci
+open apps/macos/RNServer.xcodeproj
+```
+
+Debug builds locate `bin/rn-server.js` in this repository automatically and
+start its daemon. No scheme environment variables, CocoaPods, or second Metro
+server are required. Run the native unit tests with Command-U.
+
+The Swift Package remains available for command-line development and release
+packaging:
 
 ```sh
 # From the repository root

@@ -5,3 +5,5 @@ coverage/
 dist/
 apps/macos/.build/
 apps/macos/.swiftpm/
+xcuserdata/
+*.xcuserstate

@@ -156,6 +156,10 @@ adding projects, opening or copying endpoints, controlling Metro processes,
 and toggling Tailscale Serve. It embeds the Node runtime and this CLI, so the
 destination Mac does not need Node installed.
 
+For development, run `npm ci`, open `apps/macos/RNServer.xcodeproj`, select the
+shared `RNServerApp` scheme, and press Command-R. Debug builds find this
+checkout's CLI automatically.
+
 The distributable `.pkg` installs both components together:
 
 - `/Applications/RN Server.app`

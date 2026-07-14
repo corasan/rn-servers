@@ -10,7 +10,7 @@ struct CLIService: Sendable {
         })
     }
 
-    private static func locateCLI(environment: [String: String]) throws -> (executable: URL, arguments: [String]) {
+    static func locateCLI(environment: [String: String]) throws -> (executable: URL, arguments: [String]) {
         if let script = environment["RN_SERVER_CLI_SCRIPT"] {
             let node = environment["RN_SERVER_NODE"] ?? "/usr/bin/env"
             let arguments = node == "/usr/bin/env" ? ["node", script] : [script]
@@ -25,6 +25,23 @@ struct CLIService: Sendable {
                 return (node, [script.path])
             }
         }
+
+#if DEBUG
+        let repositoryScript = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appending(path: "bin/rn-server.js")
+        if FileManager.default.fileExists(atPath: repositoryScript.path) {
+            let node = environment["RN_SERVER_NODE"] ?? "/usr/bin/env"
+            let arguments = node == "/usr/bin/env"
+                ? ["node", repositoryScript.path]
+                : [repositoryScript.path]
+            return (URL(fileURLWithPath: node), arguments)
+        }
+#endif
 
         let rootScript = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
             .appending(path: "bin/rn-server.js")

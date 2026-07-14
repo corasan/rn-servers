@@ -31,6 +31,16 @@ struct AppStoreTests {
         #expect(project.runtime.tailscale?.state == "enabled")
     }
 
+    @Test
+    func locatesRepositoryCLIForDebugBuilds() throws {
+        let location = try CLIService.locateCLI(environment: ["RN_SERVER_NODE": "/opt/node"])
+
+        #expect(location.executable.path == "/opt/node")
+        #expect(location.arguments.count == 1)
+        #expect(location.arguments[0].hasSuffix("/bin/rn-server.js"))
+        #expect(FileManager.default.fileExists(atPath: location.arguments[0]))
+    }
+
     private static let projectJSON = #"""
     {
       "id":"example",
